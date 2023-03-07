@@ -35,16 +35,15 @@ def genera_cobordes(t, i):
     else:
         for j in range(1,cuatro_t):
             fila_base = np.ones(cuatro_t, dtype = np.int32)
-
-            if j <= i - dos_t + 1 :
+            if j <= i - dos_t :
                 fila_base[i-j] = -1                 
                 fila_base[i] = -1
 
-            elif j > i - dos_t + 1 and j <= dos_t :
+            elif j > i - dos_t and j <= dos_t - 1:
                 fila_base[i] = -1                 
-                fila_base[cuatro_t - (j - i + dos_t - 1)] = -1
+                fila_base[cuatro_t - (j + dos_t - i)] = -1
 
-            elif j >= dos_t and j < i:
+            elif j > dos_t -1 and j < i:
                 fila_base[i] = -1                 
                 fila_base[cuatro_t+j-dos_t-i] = -1
 
@@ -69,6 +68,6 @@ def genera_cobordes_espacio(t):
 inicio = 2
 for m in genera_cobordes_espacio(3):
     print("Matriz coborde número ",inicio)
-    for i in range(0,4*2):
+    for i in range(0,4*3):
         print(m[i])
     inicio += 1
