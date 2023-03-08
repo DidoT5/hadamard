@@ -64,10 +64,3 @@ def genera_cobordes_espacio(t):
     for i in range(2, t*4 - 1):
         cobordes_espacio_t.append(genera_cobordes(t, i).copy())
     return cobordes_espacio_t
-
-inicio = 2
-for m in genera_cobordes_espacio(3):
-    print("Matriz coborde número ",inicio)
-    for i in range(0,4*3):
-        print(m[i])
-    inicio += 1
