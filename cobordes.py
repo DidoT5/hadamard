@@ -60,7 +60,10 @@ def genera_cobordes(t, i):
     return matriz_base
 
 def genera_cobordes_espacio(t):
-    cobordes_espacio_t = []
-    for i in range(2, t*4 - 1):
-        cobordes_espacio_t.append(genera_cobordes(t, i).copy())
-    return cobordes_espacio_t
+    conjunto_a = []
+    conjunto_b = []
+    for i in range(2, t*2):
+        conjunto_a.append(genera_cobordes(t, i).copy())
+    for i in range(t*2, (t*4)-1):
+        conjunto_b.append(genera_cobordes(t, i).copy())
+    return [conjunto_a, conjunto_b]
