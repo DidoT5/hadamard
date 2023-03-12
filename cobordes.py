@@ -66,4 +66,4 @@ def genera_cobordes_espacio(t):
         conjunto_a.append(genera_cobordes(t, i).copy())
     for i in range(t*2, (t*4)-1):
         conjunto_b.append(genera_cobordes(t, i).copy())
-    return [conjunto_a, conjunto_b]
+    return conjunto_a + conjunto_b
