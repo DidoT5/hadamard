@@ -45,6 +45,22 @@ def calcula_I_y_c(t, r_i):
     sol_set = [(xs.subs(z_0, zi), ys.subs(z_0, zi)) for zi in set_z0]
     return sol_set
 
+def obtener_combinaciones_posibles(num_cobordes, t):
+    possible_comb_a = []
+    possible_comb_b = []
+    total = []
+    for x in num_cobordes:
+        possible_comb_a += combinations(range(2*t-1),x)
+    for x in num_cobordes:
+        possible_comb_b += combinations(range(2*t-1,4*t-3),x)
+    total += possible_comb_a + possible_comb_b
+    for a in possible_comb_a:
+        for b in possible_comb_b:
+            if len(a) + len(b) < num_cobordes[-1]+1:
+                total.append((a,b))
+    
+    return total
+
 def clasifica_caminos(cobordes, i, t):
     # Calculo del parametro w
     num_cobordes = range(t-1,3*t-1)
@@ -55,30 +71,50 @@ def clasifica_caminos(cobordes, i, t):
     # Calculo de los valores c_i,I_i
     sol_set = calcula_I_y_c(t, r_i)
     # Actualiza la fila i de cada coborde i para tener dos -1
-    cobordes = [cambia_fila_i(c,i+1) for c,i in zip(cobordes, range(0,len(cobordes)))]
+    cobordes = [cambia_fila_i(c,j+1) for c,j in zip(cobordes, range(0,len(cobordes)))]
     # Creamos una lista de todas las posibles combinaciones de cobordes
-    possible_comb = []
-    for x in num_cobordes:
-        possible_comb += combinations(range(len(cobordes)),x)
+    possible_comb = obtener_combinaciones_posibles(num_cobordes, t)
     matrices_hadamard = []
     for p in possible_comb:
         if len(p) < 2:
-            coborde = cobordes[p[0]]
+            coborde = cobordes[p[0]].copy()
             interseccion = calcula_numero_caminos_e_intersecciones(coborde.copy(),R.copy(), i, t)
             if interseccion == 0 and es_matriz_hadamard(np.multiply(coborde.copy(), R.copy()), t*4):
                 matrices_hadamard.append((p[0]+2,coborde.copy()))
 
+        elif type(p[1]) is tuple:
+            if type(p[0]) is tuple:
+                coborde_a = cobordes[p[0][0]].copy()
+                for j in range(1,len(p[0])):
+                    coborde_a = np.multiply(coborde_a.copy(),cobordes[0][j].copy())
+            else:
+                coborde_a = cobordes[p[0]].copy()
+            coborde_b = cobordes[p[1][0]].copy()
+            if len(p[1]) > 1:
+                for j in range(1,len(p[1])):
+                    coborde_b = np.multiply(coborde_b,cobordes[1][j].copy())
+            num_caminos = calcula_numero_caminos_e_intersecciones(coborde_a, coborde_b, i, t)
+            m_final = np.multiply(coborde_a.copy(), coborde_b.copy()).copy()
+            num_intersecciones = calcula_numero_caminos_e_intersecciones(m_final, R, i, t)
+            print("Conjunto a probar: ", p)
+            print("Número de caminos e intersecciones: ",(num_caminos,num_intersecciones), " está en el cojunto:", (num_caminos,num_intersecciones) in sol_set)
+            print("Es matriz de hadamard: ", es_matriz_hadamard(np.multiply(m_final.copy(), R.copy()), t*4))
+            if ((num_caminos, num_intersecciones) in sol_set and es_matriz_hadamard(np.multiply(m_final.copy(), R.copy()), t*4)):
+                matrices_hadamard.append((p, m_final.copy()))
+
+        else:
+            num_caminos = calcula_numero_caminos_e_intersecciones(cobordes[p[0]].copy(), cobordes[p[1]].copy(), i, t)
+            m_final = np.multiply(cobordes[p[0]].copy(),cobordes[p[1]].copy())
+            for j in range(2,len(p)):
+                if calcula_numero_caminos_e_intersecciones(m_final.copy(), cobordes[p[j]].copy(), i, t) == num_caminos:
+                    m_final = np.multiply(m_final.copy(),cobordes[p[j]].copy())
+                else:
+                    num_caminos = -1
+                    break
+            if num_caminos == -1:
+                break
+            elif ((num_caminos, calcula_numero_caminos_e_intersecciones(m_final.copy(), R.copy(), i, t)) in sol_set 
+                and es_matriz_hadamard(np.multiply(m_final.copy(), R.copy()), t*4)):
+                matrices_hadamard.append((p, m_final.copy()))
+
     return matrices_hadamard
-
-'''
-Hacer método para guardar las combinaciones que forman un i-camino con memoria,
-es decir, crear un diccionario en el que se almacenan las combinaciones de matrices y la matriz con la que forman un i-camino
-y una cola de posibles combinaciones de las que se eliminen los elementos reversos
-Ejemplo: (m1,m2) == (m2,m1) -> Sólo se comprueba el primer literal
-
-El número de intersecciones en i se define como la cantidad -1 que tienen en las mismas posiciones la matriz R y las combinaciones
-de los cobordes
-'''
-
-
-    
