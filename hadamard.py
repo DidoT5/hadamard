@@ -27,7 +27,7 @@ class Hadarmard:
                 possible_comb_a += combinations(range(2*t-1),x)
                 possible_comb_b += combinations(range(2*t-1,4*t-3),x)
                 
-        for i in range(self.comb_b,len(possible_comb_a)):
+        for i in range(self.comb_a,len(possible_comb_a)):
             a = possible_comb_a[i]
             for j in range(self.comb_b, len(possible_comb_b)):
                 b = possible_comb_b[j]
@@ -56,6 +56,3 @@ class Hadarmard:
 
     def main(self, t):
         return self.obtener_combinacion_hadamard(range(3*t-1), t)
-t=8
-hadamard = Hadarmard(t)
-print(hadamard.main(t))
