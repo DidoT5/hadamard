@@ -28,12 +28,15 @@ def next_hadamard():
     if not(Calculo.hadamard is None) :
         parts_list.delete(0, END)
         result = Calculo.hadamard.main(Calculo.t_value)
-        for c in result:
-            if type(c) is tuple:
-                for valor in c:
-                    parts_list.insert(END,valor+2)
-            else:
-                parts_list.insert(END,c+2)
+        if result is None:
+            messagebox.showerror('There is no more possible combinations for this value of t')
+        else:
+            for c in result:
+                if type(c) is tuple:
+                    for valor in c:
+                        parts_list.insert(END,valor+2)
+                else:
+                    parts_list.insert(END,c+2)
     else:
         messagebox.showerror('Hadarmard first search should be executed first')
 
