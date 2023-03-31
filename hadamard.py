@@ -2,6 +2,8 @@ import numpy as np
 from cobordes import genera_cobordes_espacio
 from caminos import clasifica_caminos
 from itertools import combinations
+import multiprocessing as mp
+import timeit
 
 class Hadarmard:
 
@@ -32,7 +34,7 @@ class Hadarmard:
             for j in range(self.comb_b, len(possible_comb_b)):
                 b = possible_comb_b[j]
                 if len(a) + len(b) < num_cobordes[-1]+1:
-                    if (self.obtiene_matriz_hadamard(t, (a,b), self.cobordes, self.r_i, self.R)):
+                    if (self.obtiene_matriz_hadamard(t, (a,b), self.cobordes.copy(), self.r_i, self.R.copy())):
                         self.comb_a = i
                         self.comb_b = j
                         return (a,b)
@@ -45,14 +47,14 @@ class Hadarmard:
             matriz_R[i,(cuatro_t-i):cuatro_t] = -1
         for i in range(dos_t,cuatro_t):
             matriz_R[i,(i-dos_t+1):i+1] = -1
-        return matriz_R.copy()
+        return matriz_R
 
     def cambia_fila_i(self, m, i):
         m[i] = m[i]*(-1)
-        return m.copy()
+        return m
 
     def obtiene_matriz_hadamard(self, t, comb, cobordes, r_i, R):
-        return all (clasifica_caminos(comb, cobordes.copy(), i, r_i[i-1], t, R.copy()) for i in range(1,t))
+        return all (clasifica_caminos(comb, cobordes, i, r_i[i-1], t, R) for i in range(1,t))
 
     def main(self, t):
         return self.obtener_combinacion_hadamard(range(3*t-1), t)
