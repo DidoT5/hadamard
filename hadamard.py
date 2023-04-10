@@ -6,7 +6,7 @@ class Hadarmard:
 
     def __init__(self, t):
         self.t = t
-        self.possible_comb = obtener_combinaciones_posibles(range(t-1,3*t-1), t)
+        self.possible_comb = obtener_combinaciones_posibles(t)
         # Contruccion de R
         self.R = self.construye_R(t, t*2, t*4)
         # Actualiza la fila i de cada coborde i para tener dos -1
@@ -28,13 +28,13 @@ class Hadarmard:
         m[i] = m[i]*(-1)
         return m.copy()
 
-    def obtiene_matriz_hadamard(self, t, comb, cobordes, r_i, R):
-        return all (clasifica_caminos(comb, cobordes.copy(), i, r_i[i-1], t, R.copy()) for i in range(1,t))
+    def obtiene_matriz_hadamard(self, t, comb):
+        return all (clasifica_caminos(comb, self.cobordes.copy(), i, self.r_i[i-1], t, self.R.copy()) for i in range(1,t))
 
     def main(self, t):
         res = None
         for ind in range(len(self.possible_comb)):
-            if self.obtiene_matriz_hadamard(t, self.possible_comb[ind], self.cobordes, self.r_i, self.R):
+            if self.obtiene_matriz_hadamard(t, self.possible_comb[ind]):
                 res = self.possible_comb[ind]
                 self.possible_comb = self.possible_comb[ind+1:]
                 break

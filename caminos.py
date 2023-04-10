@@ -90,18 +90,17 @@ def calcula_caminos_combinacion(comb, i, t):
 def es_fila_i_hadamard(c, I_i, t, r_i):
     return (2*c - 2*I_i) - (2*t - r_i) == 0
 
-def obtener_combinaciones_posibles(num_cobordes, t):
+def obtener_combinaciones_posibles(t):
     possible_comb_a = []
     possible_comb_b = []
     total = []
-    for x in num_cobordes:
+    for x in range(1,3*t-1):
         possible_comb_a += combinations(range(2*t-1),x)
-    for x in num_cobordes:
         possible_comb_b += combinations(range(2*t-1,4*t-3),x)
     total += possible_comb_a + possible_comb_b
     for a in possible_comb_a:
         for b in possible_comb_b:
-            if len(a) + len(b) < num_cobordes[-1]+1:
+            if len(a) + len(b) < 3*t and len(a) + len(b) > t-1:
                 total.append((a,b))
     
     return total
