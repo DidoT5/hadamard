@@ -1,5 +1,6 @@
 from tkinter import *
 from tkinter import messagebox
+from tkinter import ttk
 from hadamard import Hadarmard
 import numpy as np
 
@@ -7,32 +8,54 @@ class Calculo:
     hadamard = None
     t_value = None
     result = None
+    static_cob = []
+    prohibited_cob = []
 
 class App:
 
     def __init__(self):
         self.app = Tk()
         self.Calculo = Calculo()
-        self.mainFrame = Frame(self.app)
-        self.topFrame = Frame(self.mainFrame)
+        self.main_frame = Frame(self.app)
+        self.top_frame = Frame(self.main_frame)
         self.part_text = StringVar()
-        self.middleFrame = Frame(self.mainFrame)
-        self.canvas = Canvas(self.middleFrame, width=200, height=100, bg="white")
-        self.scrollbar = Scrollbar(self.middleFrame)
-        self.bottomFrame = Frame(self.mainFrame)
+        self.middle_frame = Frame(self.main_frame)
+        self.canvas = Canvas(self.middle_frame, width=200, height=100, bg="white")
+        self.scrollbar = Scrollbar(self.middle_frame)
+        self.bottom_frame = Frame(self.main_frame)
         self.comb_var = StringVar()
+        self.cobordes_canvas = []
+
+    def clickedCob(self, button):
+
+        color_actual =  button.cget('bg')
+
+        if color_actual== "blue":
+            button.config(bg="yellow")
+        elif color_actual=="yellow":
+            button.config(bg="white")
+        else:
+            button.config(bg="blue")
+        self.app.update() 
 
     def draw_rectangles(self,t_value):
         canvas = self.canvas
+        self.cobordes_canvas = []
         canvas.delete('all')
-        for number in range(2,2*t_value):
+        for number in range(2,2*t_value+1):
             color = "red" if number-2 in self.Calculo.result[0] else "white"
-            canvas.create_rectangle(50*(number-2), 0, 50*(number-1), 50, fill=color, outline = 'black')
-            #canvas.create_text((50*(number-2)//2,  50*(number-1)//2), text=number)
-        for number in range(2*t_value,4*t_value-1):
+            button = Button(self.canvas, width=4, text=number)
+            button.configure(bg=color, activebackground=color, command=lambda x=button: self.clickedCob(x),relief="flat")
+            self.cobordes_canvas.append(button)
+            self.canvas.create_window((50*(number-2), 50), window=button, anchor=CENTER)
+
+        for number in range(2*t_value+1,4*t_value-1):
             color = "red" if number-2 in self.Calculo.result[1] else "white"
-            canvas.create_rectangle(50*(number-2*t_value), 50, 50*(number-2*t_value+1), 100, fill=color, outline = 'black')
-            #canvas.create_text((50*(number-2*t_value)//2, 50*(number-2*t_value+1)//2), anchor=W, text=number)
+            button = Button(canvas, width=4, text=number)
+            button.configure(bg=color, activebackground=color, command=lambda x=button: self.clickedCob(x),relief="flat")
+            self.cobordes_canvas.append(button)
+            self.canvas.create_window((50*(number-2*t_value), 100), window=button, anchor=CENTER)
+
         canvas.config(scrollregion=canvas.bbox("all"))
         self.app.update()
 
@@ -89,9 +112,13 @@ class App:
         for mat in self.Calculo.result:
             if type(mat) is tuple:
                 for c in mat:
-                    final_mat = np.multiply(final_mat,self.Calculo.hadamard.cobordes[c])
+                    final_mat = np.multiply(final_mat,self.Calculo.hadamard.cobordes[c].copy())
             else:
-                final_mat = np.multiply(final_mat,self.Calculo.hadamard.cobordes[mat])
+                final_mat = np.multiply(final_mat,self.Calculo.hadamard.cobordes[mat].copy())
+        final_mat = np.multiply(final_mat, self.Calculo.hadamard.R.copy())
+        for i in range(4*t_value):
+            print('Fila i:',i,final_mat[i])
+            print('Suma de fila i:',np.sum(final_mat[i]))
         for i in range(4*t_value):
             for j in range(4*t_value):
                 color = "red" if final_mat[i,j] == -1 else "white"
@@ -104,19 +131,19 @@ class App:
 
     def __main__(self):
 
-        self.mainFrame.grid(row=0, column=0, sticky="nswe")
+        self.main_frame.grid(row=0, column=0, sticky="nswe")
 
-        self.topFrame.grid(row=0, sticky="nswe")
+        self.top_frame.grid(row=0, sticky="nswe")
 
-        part_label = Label(self.topFrame, text='Variable T: ', font=('bold', 16), pady=20)
-        part_entry = Entry(self.topFrame, textvariable=self.part_text)
-        start_btn = Button(self.topFrame, text='Start calculation', width=20, command=self.execute_hadamard)
+        part_label = Label(self.top_frame, text='Variable T: ', font=('bold', 16), pady=20)
+        part_entry = Entry(self.top_frame, textvariable=self.part_text)
+        start_btn = Button(self.top_frame, text='Start calculation', width=20, command=self.execute_hadamard)
 
         part_label.grid(row=0, column=0)
         part_entry.grid(row=0, column=1)
         start_btn.grid(row = 0, column=2, pady=20)
 
-        self.middleFrame.grid(row=1, sticky="nswe")
+        self.middle_frame.grid(row=1, sticky="nswe")
 
         self.canvas.config(xscrollcommand=self.scrollbar.set, highlightthickness=0)
         self.scrollbar.config(orient=HORIZONTAL, command=self.canvas.xview)
@@ -124,19 +151,20 @@ class App:
 
         self.canvas.pack(side=LEFT,expand=True,fill=BOTH)
 
-        self.bottomFrame.grid(row=3, sticky="nswe")
+        self.bottom_frame.grid(row=3, sticky="nswe")
 
-        start_btn = Button(self.bottomFrame, text='Next Combination', width=20, command=self.next_hadamard)
+        start_btn = Button(self.bottom_frame, text='Next Combination', width=20, command=self.next_hadamard)
         start_btn.grid(row=0, column=1, pady=20, padx=10)
-        start_btn = Button(self.bottomFrame, text='Draw Matrix', width=20, command=self.display_matrix)
+        start_btn = Button(self.bottom_frame, text='Draw Matrix', width=20, command=self.display_matrix)
         start_btn.grid(row=0, column=0, pady=20, padx=10)
 
-        comb_text = Label(self.bottomFrame, text='Combinacion propuesta: ', font=('bold', 16), pady=20)
-        comb_entry = Entry(self.bottomFrame, textvariable=self.comb_var, width=25)
+        comb_text = Label(self.bottom_frame, text='Combinacion propuesta: ', font=('bold', 16), pady=20)
+        comb_entry = Entry(self.bottom_frame, textvariable=self.comb_var, width=25)
         comb_text.grid(row=1, column=0)
         comb_entry.grid(row=1, column=1)
 
-        self.mainFrame.place(relx=0.25, rely=0.15)
+        self.main_frame.place(relx=0.25, rely=0.15)
+
         self.app.title('Hadarmard App')
         self.app.geometry('800x400')
 
