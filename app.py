@@ -2,11 +2,7 @@ from tkinter import *
 from tkinter import messagebox
 from tkinter import ttk
 from hadamard import Hadarmard
-
-#Create Window object
-app = Tk()
-
-global canvas
+import numpy as np
 
 class Calculo:
     hadamard = None
@@ -61,21 +57,46 @@ class App:
             self.canvas.create_window((50*(number-2*t_value), 100), window=button, anchor=CENTER)
 
         canvas.config(scrollregion=canvas.bbox("all"))
-        app.update()
-    except ValueError:
-        messagebox.showerror('A value for t is required', 'Must be an integer number')
+        self.app.update()
 
-def next_hadamard():
-    if not(Calculo.hadamard is None) :
-        result = Calculo.hadamard.main(Calculo.t_value)
-        if result is None:
-            messagebox.showerror('There is no more possible combinations for this value of t')
-    else:
-        messagebox.showerror('Hadarmard first search should be executed first')
+    def execute_hadamard(self):
+        try:
+            t_value = int(self.part_text.get())
+            if t_value > 1:
+                self.Calculo.t_value = t_value
+                self.Calculo.hadamard = Hadarmard(t_value)
+                self.Calculo.result = self.Calculo.hadamard.main(t_value)
+                self.draw_rectangles(t_value)
+            else:
+                messagebox.showerror('Value of t must be greater than 1')
+        except ValueError:
+            messagebox.showerror('A value for t is required', 'Must be an integer number')
 
-def createScrollableContainer():
-	canvas.config(xscrollcommand=scrollbar.set, highlightthickness=0)
-	scrollbar.config(orient=HORIZONTAL, command=canvas.xview)
+    def next_hadamard(self):
+        if not(self.Calculo.hadamard is None) :
+            t_value = self.Calculo.t_value
+            self.Calculo.result = self.Calculo.hadamard.main(t_value)
+            if self.Calculo.result is None:
+                messagebox.showerror('There is no more possible combinations for this value of t')
+            else:
+                self.draw_rectangles(t_value)
+        else:
+            messagebox.showerror('Hadarmard first search should be executed first')
+
+    def prueba_comb(self):
+        try:
+            t_value = int(self.part_text.get())
+            try:
+                combinacion =(int(num) for num in comb_var.split(","))
+                self.Calculo.t_value = t_value
+                self.Calculo.hadamard = Hadarmard(t_value)
+                self.Calculo.result = self.Calculo.hadamard.obtiene_matriz_hadamard(t_value, combinacion)
+                if Calculo.result:
+                    self.draw_rectangles(t_value)
+            except ValueError:
+                messagebox.showerror('Values for the combination must be all integers')
+        except ValueError:
+            messagebox.showerror('A value for t is required', 'Must be an integer number')
 
     def display_matrix(self):
         top = Toplevel()
@@ -108,8 +129,7 @@ def createScrollableContainer():
         matrix.pack(side=LEFT,expand=True,fill=BOTH)
         top.update()
 
-mainFrame = Frame(app)
-mainFrame.grid(row=0, column=0, sticky="nswe")
+    def __main__(self):
 
         self.main_frame.grid(row=0, column=0, sticky="nswe")
 
@@ -119,21 +139,17 @@ mainFrame.grid(row=0, column=0, sticky="nswe")
         part_entry = Entry(self.top_frame, textvariable=self.part_text)
         start_btn = Button(self.top_frame, text='Start calculation', width=20, command=self.execute_hadamard)
 
-part_label.grid(row=0, column=0)
-part_entry.grid(row=0, column=1)
-start_btn.grid(row = 0, column=2, pady=20)
+        part_label.grid(row=0, column=0)
+        part_entry.grid(row=0, column=1)
+        start_btn.grid(row = 0, column=2, pady=20)
 
         self.middle_frame.grid(row=1, sticky="nswe")
 
-canvas = Canvas(middleFrame, width=200, height=100, bg="white")
-scrollbar = Scrollbar(middleFrame)
-createScrollableContainer()
-canvas.pack(side=LEFT,expand=True,fill=BOTH)
+        self.canvas.config(xscrollcommand=self.scrollbar.set, highlightthickness=0)
+        self.scrollbar.config(orient=HORIZONTAL, command=self.canvas.xview)
+        self.scrollbar.pack(fill=X, side=BOTTOM, expand=FALSE)
 
-bottomFrame = Frame(mainFrame)
-bottomFrame.grid(row=3, sticky="nswe")
-start_btn = Button(bottomFrame, text='Next Combination', width=20, command=next_hadamard)
-start_btn.grid(column=2, pady=20)
+        self.canvas.pack(side=LEFT,expand=True,fill=BOTH)
 
         self.bottom_frame.grid(row=3, sticky="nswe")
 
