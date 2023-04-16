@@ -9,6 +9,7 @@ def calcula_intersecciones(fila_i, R_i, t):
     return ac
 
 def calcula_caminos_combinacion(comb, i, t):
+    comb =(comb[ne.evaluate("comb < (t-1)*2")],comb[ne.evaluate("comb >= (t-1)*2")],)
     caminos_a = []
     ciclos_a = []
     caminos_b = []

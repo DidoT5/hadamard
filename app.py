@@ -8,8 +8,8 @@ class Calculo:
     hadamard = None
     t_value = None
     result = None
-    static_cob = []
-    prohibited_cob = []
+    static_cob = 0
+    prohibited_cob = 0
 
 class App:
 
@@ -26,15 +26,20 @@ class App:
         self.comb_var = StringVar()
         self.cobordes_canvas = []
 
-    def clickedCob(self, button):
+    def clickedCob(self, button, number):
 
         color_actual =  button.cget('bg')
+        valor = 2**number
 
         if color_actual== "blue":
+            self.Calculo.static_cob -= valor
+            self.Calculo.prohibited_cob += valor
             button.config(bg="yellow")
         elif color_actual=="yellow":
+            self.Calculo.prohibited_cob += valor
             button.config(bg="white")
         else:
+            self.Calculo.static_cob += valor
             button.config(bg="blue")
         self.app.update() 
 
@@ -43,16 +48,18 @@ class App:
         self.cobordes_canvas = []
         canvas.delete('all')
         for number in range(2,2*t_value+1):
-            color = "red" if number-2 in self.Calculo.result[0] else "white"
+            color = "red" if number-2 in self.Calculo.result else "white"
             button = Button(self.canvas, width=4, text=number)
-            button.configure(bg=color, activebackground=color, command=lambda x=button: self.clickedCob(x),relief="flat")
+            button.configure(bg=color, activebackground=color, command=lambda x=button, 
+                num = number-2: self.clickedCob(x, num),relief="flat")
             self.cobordes_canvas.append(button)
             self.canvas.create_window((50*(number-2), 50), window=button, anchor=CENTER)
 
         for number in range(2*t_value+1,4*t_value-1):
-            color = "red" if number-2 in self.Calculo.result[1] else "white"
+            color = "red" if number-2 in self.Calculo.result else "white"
             button = Button(canvas, width=4, text=number)
-            button.configure(bg=color, activebackground=color, command=lambda x=button: self.clickedCob(x),relief="flat")
+            button.configure(bg=color, activebackground=color, command=lambda x=button, 
+                num = number-2: self.clickedCob(x, num),relief="flat")
             self.cobordes_canvas.append(button)
             self.canvas.create_window((50*(number-2*t_value), 100), window=button, anchor=CENTER)
 
@@ -65,17 +72,18 @@ class App:
             if t_value > 1:
                 self.Calculo.t_value = t_value
                 self.Calculo.hadamard = Hadarmard(t_value)
-                self.Calculo.result = self.Calculo.hadamard.main(t_value)
+                self.Calculo.result = self.Calculo.hadamard.__main__(t_value)
                 self.draw_rectangles(t_value)
             else:
                 messagebox.showerror('Value of t must be greater than 1')
-        except ValueError:
+        except ValueError as ex:
+            print("Se produjo un error:", ex)
             messagebox.showerror('A value for t is required', 'Must be an integer number')
 
     def next_hadamard(self):
         if not(self.Calculo.hadamard is None) :
             t_value = self.Calculo.t_value
-            self.Calculo.result = self.Calculo.hadamard.main(t_value)
+            self.Calculo.result = self.Calculo.hadamard.__main__(t_value)
             if self.Calculo.result is None:
                 messagebox.showerror('There is no more possible combinations for this value of t')
             else:
