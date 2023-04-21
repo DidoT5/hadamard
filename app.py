@@ -26,23 +26,28 @@ class App:
         self.comb_var = StringVar()
         self.max_cob_var = StringVar()
         self.cobordes_canvas = []
+        self.comb_encontradas = []
 
     def clickedCob(self, number):
 
-        button = self.cobordes_canvas[number]
+        (button,color) =  self.cobordes_canvas[number]
         color_actual =  button.cget('bg')
         valor = 2**number
 
-        if color_actual== "blue":
+        if color == "blue":
             self.Calculo.static_cob -= valor
             self.Calculo.prohibited_cob += valor
             button.config(bg="yellow")
-        elif color_actual=="yellow":
-            self.Calculo.prohibited_cob += valor
+            color = "yellow"
+        elif color=="yellow":
+            self.Calculo.prohibited_cob -= valor
             button.config(bg="white")
+            color = "white"
         else:
             self.Calculo.static_cob += valor
             button.config(bg="blue")
+            color = "blue"
+        self.cobordes_canvas[number] = ((button,color))
         self.app.update() 
 
     def draw_rectangles(self,t_value):
@@ -54,14 +59,14 @@ class App:
             button = Button(self.canvas, width=4, text=number)
             button.configure(bg="white", activebackground="white", command=lambda 
                 num = number-2: self.clickedCob(num),relief="flat")
-            self.cobordes_canvas.append(button)
+            self.cobordes_canvas.append((button,"white"))
             self.canvas.create_window((50*(number-2), 50), window=button, anchor=CENTER)
 
         for number in range(2*t_value+1,4*t_value-1):
             button = Button(canvas, width=4, text=number)
             button.configure(bg="white", activebackground="white", command=lambda 
                 num = number-2: self.clickedCob(num),relief="flat")
-            self.cobordes_canvas.append(button)
+            self.cobordes_canvas.append((button,"white"))
             self.canvas.create_window((50*(number-2*t_value), 100), window=button, anchor=CENTER)
         canvas.config(scrollregion=canvas.bbox("all"))
         self.app.update()
@@ -71,19 +76,30 @@ class App:
         canvas.delete('all')
         resultado = [] if self.Calculo.result is None else self.Calculo.result
         for number in range(2,2*t_value+1):
-            button = self.cobordes_canvas[number-2]
-            color = "red" if number-2 in resultado and button.cget('bg')=="white" else "white"
+            (button,color) =  self.cobordes_canvas[number-2]
+            if number-2 in resultado:
+                if color=="white":
+                    color = "red"
+            else:
+                if color =="red":
+                    color = "white"
             button.configure(bg=color, activebackground=color, command=lambda
                 num = number-2: self.clickedCob(num),relief="flat")
+            self.cobordes_canvas[number-2] = (button,color)
             self.cobordes_canvas.append(button)
             self.canvas.create_window((50*(number-2), 50), window=button, anchor=CENTER)
 
         for number in range(2*t_value+1,4*t_value-1):
-            button = self.cobordes_canvas[number-2]
-            color = "red" if number-2 in resultado and button.cget('bg')=="white" else "white"
+            (button,color) =  self.cobordes_canvas[number-2]
+            if number-2 in resultado:
+                if color=="white":
+                    color = "red"
+            else:
+                if color =="red":
+                    color = "white"
             button.configure(bg=color, activebackground=color, command=lambda 
                 num = number-2: self.clickedCob(num),relief="flat")
-            self.cobordes_canvas.append(button)
+            self.cobordes_canvas[number-2] = (button,color)
             self.canvas.create_window((50*(number-2*t_value), 100), window=button, anchor=CENTER)
 
         canvas.config(scrollregion=canvas.bbox("all"))
@@ -128,6 +144,7 @@ class App:
             if self.Calculo.result is None:
                 messagebox.showerror('There is no more possible combinations for this value of t')
             else:
+                self.comb_encontradas.append(self.Calculo.result)
                 self.update_rectangles(t_value)
         else:
             messagebox.showerror('Hadarmard first search should be executed first')
@@ -139,6 +156,7 @@ class App:
                 combinacion = np.array([int(num)-2 for num in self.comb_var.get().split(",")], dtype=np.int64)
                 es_matriz = self.Calculo.hadamard.obtiene_matriz_hadamard(combinacion)
                 if es_matriz:
+                    self.comb_encontradas.append(combinacion)
                     self.Calculo.result = combinacion
                     self.update_rectangles(t_value)
                 else:
@@ -151,6 +169,7 @@ class App:
     def display_matrix(self):
         top = Toplevel()
         top.geometry('500x500')
+        top.title('Representación de la combinación: {}'.format(self.Calculo.result+2))
         matrix = Canvas(top, width=500, height=500, bg="black")
         mat_sb_x = Scrollbar(top)
         mat_sb_y = Scrollbar(top)
@@ -171,6 +190,24 @@ class App:
         mat_sb_y.pack(fill=Y, side=RIGHT, expand=FALSE)
         matrix.pack(side=LEFT,expand=True,fill=BOTH)
         top.update()
+
+    def display_encountered_comb(self):
+        top = Toplevel()
+        top.geometry('700x500')
+        top.title("Matrices encontradas")
+        texto_inicial = 'Se encontraron un total de {} combinacion/es\n'.format(len(self.comb_encontradas))
+        Label(top, text=texto_inicial, font= ('Helvetica bold',14)).pack(anchor=CENTER)
+        v = Scrollbar(top)
+        v.pack(side = RIGHT, fill = Y)
+        t = Text(top, width = 15, wrap = NONE,
+                 yscrollcommand = v.set)
+        for comb in self.comb_encontradas:
+            t.insert(END,'Combinación:{} \n'.format(comb+2))
+        t.pack(side=TOP, fill=X)
+        v.config(command=t.yview)
+
+        top.update()
+
 
     def __main__(self):
 
@@ -208,10 +245,11 @@ class App:
         comb_text = Label(self.bottom_frame, text='Combinacion \n propuesta: ', font=('bold', 10))
         comb_entry = Entry(self.bottom_frame, textvariable=self.comb_var, width=15)
         test_comb_btn = Button(self.bottom_frame, text='Probar', width=15, command=self.prueba_comb)
+        muestra_encontradas_btn = Button(self.bottom_frame, text='Matrices Encontradas ', width=15, command=self.display_encountered_comb)
         comb_text.grid(row=1, column=0)
         comb_entry.grid(row=1, column=1, padx=10)
         test_comb_btn.grid(row=1, column=2)
-
+        muestra_encontradas_btn.grid(row=2, column=1, pady=5)
 
         self.app.title('Hadarmard App')
         self.app.geometry('800x400')
