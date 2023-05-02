@@ -1,116 +1,72 @@
 import numpy as np
-from sympy import *
-from itertools import chain, combinations
+import numexpr as ne
 
 def calcula_intersecciones(fila_i, R_i, t):
-    ac = 0
-    for j in range(1,4*t):
-        ac += fila_i[j] == R_i[j] == -1
-    return ac
+    return np.sum((fila_i[1:4*t] == R_i[1:4*t]) & (fila_i[1:4*t] == -1))
 
 def calcula_caminos_combinacion(comb, i, t):
-    caminos = []
-    ciclos = []
-    if type(comb[0]) is tuple:
+    # -- Declaración de variables --
+    comb = np.array(comb)
+    comb_a =comb[ne.evaluate("comb < (t*2)-1")]
+    comb_b = comb[ne.evaluate("comb >= (t*2)-1")]
+    dos_t = 2*t
+    cuatro_t = 4*t
+    caminos_a = []
+    caminos_b = []
+
+    # -- Cálculo de los caminos del conjunto a --
+    if len(comb_a) > 0:
+        def coincidente_a(c):
+            return (c+i)%(dos_t)
         caminos_a = []
-        ciclos_a = []
-        caminos_b = []
-        ciclos_b = []
-        #Conjunto a
-        for c in comb[0]:
-            coincidente = (c+i)%(2*t)
-            if coincidente in comb[0]:
-                pertence_camino = False
-                for j in range(len(caminos_a)):
-                    camino = caminos_a[j-len(ciclos_a)] 
-                    if c == camino[-1]:
-                        pertence_camino = True
-                        if coincidente != camino[0]:
-                            camino += [coincidente]
-                        else:
-                            ciclos_a.append(caminos_a.pop(j-len(ciclos_a)))
-                if not pertence_camino:
-                    caminos_a.append([c,coincidente])
+        while len(comb_a)>0:
+            c = comb_a[0]
+            coincidente = np.argmax(comb_a == coincidente_a(c))
+            if coincidente != 0:
+                camino = [0]
+                while coincidente != 0:
+                    camino.append(coincidente)
+                    coin_value = coincidente_a(comb_a[coincidente])
+                    coincidente = np.argmax(comb_a == coin_value)
+                if not (coin_value==comb_a[camino[0]]):
+                    caminos_a.append(comb_a[camino])
+                comb_a = np.delete(comb_a,camino)
+            else:
+                comb_a = np.delete(comb_a,0)
+                caminos_a.append(np.array([c]))
 
+    # -- Cálculo de los caminos del conjunto b --
+    if len(comb_b) > 0:
+        def coincidente_b(c):
+            res = (c+i)%(cuatro_t)
+            return res if res >= (dos_t-1) else res + dos_t -1
+        while len(comb_b)>0:
+            c = comb_b[0]
+            coincidente = np.argmax(comb_b == coincidente_b(c))
+            if coincidente != 0:
+                camino = [0]
+                while coincidente != 0:
+                    camino.append(coincidente)
+                    coin_value = coincidente_b(comb_b[coincidente])
+                    coincidente = np.argmax(comb_b == coin_value)
+                if not (coin_value==comb_b[camino[0]]):
+                    caminos_b.append(comb_b[camino])
+                comb_b = np.delete(comb_b,camino)
             else:
-                if all(c != camino[-1] for camino in caminos_a):
-                    caminos_a.append([c])
-        #Conjunto b
-        for c in comb[1]:
-            coincidente = (c+i)%(4*t)
-            coincidente = coincidente if coincidente >= (2*t-1) else coincidente + 2*t -1
-            if coincidente in comb[1]:
-                pertence_camino = False
-                for j in range(len(caminos_b)):
-                    camino = caminos_b[j-len(ciclos_b)] 
-                    if c == camino[-1]:
-                        pertence_camino = True
-                        if coincidente != camino[0]:
-                            camino += [coincidente]
-                        else:
-                            ciclos_b.append(caminos_b.pop(j-len(ciclos_b)))
-                if not pertence_camino:
-                    caminos_b.append([c,coincidente])
-
-            else:
-                if all(c != camino[-1] for camino in caminos_b):
-                    caminos_b.append([c])
-        caminos = caminos_a + caminos_b
-        ciclos = ciclos_a + ciclos_b
-
-    else:
-        for c in comb:
-            coincidente = 0
-            if (c >= 2*t -1):
-                coincidente = (c+i)%(4*t)
-                coincidente = coincidente + 2*t-1 if coincidente < 2*t-1 else coincidente
-            else:
-                coincidente = (c+i)%(2*t)
-            # Si el coincidente esta en las combinaciones posibles
-            if coincidente in comb:
-                pertence_camino = False
-                # Comprobamos si c forma parte de un camino (al estar ordenados solo miramos el ultimo indice)
-                for j in range(len(caminos)):
-                    camino = caminos[j-len(ciclos)] 
-                    if c == camino[-1]:
-                        pertence_camino = True
-                        # Si el coincidente es igual al primer elemento forma un ciclo y hay que descartarlo de los caminos
-                        if coincidente != camino[0]:
-                            camino += [coincidente]
-                        else:
-                            ciclos.append(caminos.pop(j-len(ciclos)))
-                if not pertence_camino:
-                    caminos.append([c,coincidente])
-            # Si ademas de no tener coincidentes, no forma parte de ningun camino, forma uno solo
-            else:
-                if all(c != camino[-1] for camino in caminos):
-                    caminos.append([c])
-    return (caminos, ciclos)
+                comb_b = np.delete(comb_b,0)
+                caminos_b.append(np.array([c]))
+    caminos = caminos_a + caminos_b
+    return caminos
 
 def es_fila_i_hadamard(c, I_i, t, r_i):
     return (2*c - 2*I_i) - (2*t - r_i) == 0
 
-def obtener_combinaciones_posibles(t):
-    possible_comb_a = []
-    possible_comb_b = []
-    total = []
-    for x in range(1,3*t-1):
-        possible_comb_a += combinations(range(2*t-1),x)
-        possible_comb_b += combinations(range(2*t-1,4*t-3),x)
-    total += possible_comb_a + possible_comb_b
-    for a in possible_comb_a:
-        for b in possible_comb_b:
-            if len(a) + len(b) < 3*t and len(a) + len(b) > t-1:
-                total.append((a,b))
-    
-    return total
-
 def clasifica_caminos(comb, cobordes, i, r_i, t, R):
-    (caminos, ciclos) = calcula_caminos_combinacion(comb, i, t)
+    caminos = calcula_caminos_combinacion(comb, i, t)
     fila_i = np.ones(4*t, dtype = np.int32)
     c_i = len(caminos)
-    for c in range(0,c_i):
-        for cob in caminos[c]:
-            fila_i = np.multiply(fila_i,cobordes[cob][i,:])
+    for c in comb:
+        producto = cobordes[c][i]
+        fila_i = ne.evaluate('fila_i*producto')
     I_i = calcula_intersecciones(fila_i, R[i,:], t)
     return es_fila_i_hadamard(c_i, I_i, t, r_i)
