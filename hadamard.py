@@ -22,15 +22,16 @@ class Hadarmard:
         self.r_i = np.array([np.sum(self.R[i,:]==-1) for i in range(1,t)])
         self.max = max
 
-    def genera_siguiente_comb(self, min, max, array_proh, xor_prohib, array_fijos, width):
+    def genera_siguiente_comb(self, min, max, array_proh, fijos, array_fijos, width):
         # -- Una iteración fuera del bucle por si la siguiente combinación ya es válida --
         self.last += 1
         last = self.last
-        binary_array = np.array(list(np.binary_repr(last, width=width)), dtype=np.int64) | self.array_fijos
+        binary_array = np.array(list(np.binary_repr(last, width=width)), dtype=np.int64)
+        coincidentes_fijos = ne.evaluate("sum(binary_array * array_fijos)")
         coincidentes_prohib = ne.evaluate("sum(binary_array * array_proh)")
         rango = ne.evaluate("sum(binary_array)")
-        if coincidentes_prohib > 0:
-            rango = ne.evaluate("rango - coincidentes_prohib - 1")
+        if coincidentes_prohib > 0 or coincidentes_fijos < fijos:
+            rango = 0
 
         # Contar el número de 1's que hay en las posiciones prohibidas y restarlos al min de 1's
         # que debe haber, de forma que se obtenga la cantidad de unos reales que hay, y tras el bucle
@@ -38,16 +39,14 @@ class Hadarmard:
         while rango < min or rango > max:
             last += 1
             # Incrementar el valor del primer 1 después de la posición encontrada
-            binary_array = np.array(list(np.binary_repr(last, width=width)), dtype=np.int64) | self.array_fijos
+            binary_array = np.array(list(np.binary_repr(last, width=width)), dtype=np.int64)
             coincidentes_prohib = ne.evaluate("sum(binary_array * array_proh)")
+            coincidentes_fijos = ne.evaluate("sum(binary_array * array_fijos)")
+            print(last)
+            if coincidentes_prohib > 0 or coincidentes_fijos < fijos:
+                continue
             rango = ne.evaluate("sum(binary_array)")
-            if coincidentes_prohib > 0:
-                rango = ne.evaluate("rango - coincidentes_prohib - 1")
-            
-        # Si algún número resultante es coincidente con un prohibido
-        if coincidentes_prohib > 0:
-            # Eliminamos los 1's prohibidos con los 0's de la máscara
-            binary_array = ne.evaluate("binary_array * xor_prohib")
+
         self.last = last
         return self.rango_cobordes[np.bool_(np.flip(binary_array, axis=0))]
 
@@ -78,11 +77,12 @@ class Hadarmard:
         width = 4*t - 3
         self.array_proh = np.array(list(np.binary_repr(prohibidos, width=width)), dtype=np.int64)
         self.array_fijos = np.array(list(np.binary_repr(fijos, width=width)), dtype=np.int64)
+        fijos = np.sum(self.array_fijos)
         # Convertimos los 1's en 0's para una mascara
         xor_prohib = np.bitwise_xor(self.array_proh,np.ones(width, np.int64))
         resultado = False
         comb = None
         while not resultado and self.last < max_pred:
-            comb = self.genera_siguiente_comb(t-1, max, self.array_proh, xor_prohib, self.array_fijos, width)
+            comb = self.genera_siguiente_comb(t-1, max, self.array_proh, fijos, self.array_fijos, width)
             resultado = self.obtiene_matriz_hadamard(comb)
         return comb

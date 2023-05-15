@@ -10,9 +10,7 @@ def calcula_caminos_combinacion(comb, i, t):
     comb_b = comb[ne.evaluate("comb >= (t*2)-1")]
     dos_t = 2*t
     cuatro_t = 4*t
-    caminos_a = []
-    caminos_b = []
-
+    caminos = 0
     # -- Cálculo de los caminos del conjunto a --
     if len(comb_a) > 0:
         def coincidente_a(c):
@@ -30,7 +28,7 @@ def calcula_caminos_combinacion(comb, i, t):
                     coin_value = coincidente_a(comb_a[coincidente])
                     coincidente = np.argmax(comb_a == coin_value)
                 if not (coin_value==comb_a[camino[0]]):
-                    caminos_a.append(comb_a[camino])
+                    caminos += 1
                 comb_a = np.delete(comb_a,camino)
             else:
                 coincidente_neg = np.argmax(comb_a == coincidente_a_neg(c))
@@ -41,11 +39,11 @@ def calcula_caminos_combinacion(comb, i, t):
                         coin_value = coincidente_a_neg(comb_a[coincidente_neg])
                         coincidente_neg = np.argmax(comb_a == coin_value)
                     if not (coin_value==comb_a[camino[0]]):
-                        caminos_a.append(comb_a[camino])
+                        caminos += 1
                     comb_a = np.delete(comb_a,camino)
                 else:
                     comb_a = np.delete(comb_a,0)
-                    caminos_a.append(np.array([c]))
+                    caminos += 1
 
     # -- Cálculo de los caminos del conjunto b --
     if len(comb_b) > 0:
@@ -65,7 +63,7 @@ def calcula_caminos_combinacion(comb, i, t):
                     coin_value = coincidente_b(comb_b[coincidente])
                     coincidente = np.argmax(comb_b == coin_value)
                 if not (coin_value==comb_b[camino[0]]):
-                    caminos_b.append(comb_b[camino])
+                    caminos += 1
                 comb_b = np.delete(comb_b,camino)
             else:
                 coincidente_neg =  np.argmax(comb_b == coincidente_b_neg(c))
@@ -76,21 +74,19 @@ def calcula_caminos_combinacion(comb, i, t):
                         coin_value = coincidente_b_neg(comb_b[coincidente_neg])
                         coincidente_neg = np.argmax(comb_b == coin_value)
                     if not (coin_value==comb_b[camino[0]]):
-                        caminos_b.append(comb_b[camino])
+                        caminos += 1
                     comb_b = np.delete(comb_b,camino)
                 else:
                     comb_b = np.delete(comb_b,0)
-                    caminos_b.append(np.array([c]))
-    caminos = caminos_a + caminos_b
+                    caminos += 1
     return caminos
 
 def es_fila_i_hadamard(c_i, I_i, t, r_i):
     return (2*c_i - 2*I_i) - (2*t - r_i) == 0
 
 def clasifica_caminos(comb, cobordes, i, r_i, t, R):
-    caminos = calcula_caminos_combinacion(comb, i, t)
+    c_i = calcula_caminos_combinacion(comb, i, t)
     fila_i = np.ones(4*t, dtype = np.int32)
-    c_i = len(caminos)
     for c in comb:
         producto = cobordes[c][i]
         fila_i = ne.evaluate('fila_i*producto')
