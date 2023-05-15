@@ -149,23 +149,6 @@ class App:
         else:
             messagebox.showerror('Hadarmard first search should be executed first')
 
-    def prueba_comb(self):
-        try:
-            t_value = int(self.t_text.get())
-            try:
-                combinacion = np.array([int(num)-2 for num in self.comb_var.get().split(",")], dtype=np.int64)
-                es_matriz = self.Calculo.hadamard.obtiene_matriz_hadamard(combinacion)
-                if es_matriz:
-                    self.comb_encontradas.append(combinacion)
-                    self.Calculo.result = combinacion
-                    self.update_rectangles(t_value)
-                else:
-                    messagebox.showerror('Bad Try', 'This combination is not resulting into Hadamard matrix')
-            except ValueError:
-                messagebox.showerror('Values for the combination must be all integers')
-        except ValueError:
-            messagebox.showerror('A value for t is required', 'Must be an integer number')
-
     def display_matrix(self):
         top = Toplevel()
         top.geometry('500x500')
@@ -242,14 +225,8 @@ class App:
         dibuja_btn = Button(self.bottom_frame, text='Dibuja Matriz', width=15, command=self.display_matrix)
         dibuja_btn.grid(row=0, column=0)
 
-        comb_text = Label(self.bottom_frame, text='Combinacion \n propuesta: ', font=('bold', 10))
-        comb_entry = Entry(self.bottom_frame, textvariable=self.comb_var, width=15)
-        test_comb_btn = Button(self.bottom_frame, text='Probar', width=15, command=self.prueba_comb)
         muestra_encontradas_btn = Button(self.bottom_frame, text='Matrices Encontradas ', width=15, command=self.display_encountered_comb)
-        comb_text.grid(row=1, column=0)
-        comb_entry.grid(row=1, column=1, padx=10)
-        test_comb_btn.grid(row=1, column=2)
-        muestra_encontradas_btn.grid(row=2, column=1, pady=5)
+        muestra_encontradas_btn.grid(row=0, column=1, pady=5, padx=5)
 
         self.app.title('Hadarmard App')
         self.app.geometry('800x400')
