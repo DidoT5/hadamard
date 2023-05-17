@@ -22,16 +22,12 @@ class Hadarmard:
         self.r_i = np.array([np.sum(self.R[i,:]==-1) for i in range(1,t)])
         self.max = max
 
-    def genera_siguiente_comb(self, min, max, array_proh, fijos, array_fijos, width):
+    def genera_siguiente_comb(self, min, max, fijos, width, rango_cobordes):
         # -- Una iteración fuera del bucle por si la siguiente combinación ya es válida --
         self.last += 1
         last = self.last
         binary_array = np.array(list(np.binary_repr(last, width=width)), dtype=np.int64)
-        coincidentes_fijos = ne.evaluate("sum(binary_array * array_fijos)")
-        coincidentes_prohib = ne.evaluate("sum(binary_array * array_proh)")
         rango = ne.evaluate("sum(binary_array)")
-        if coincidentes_prohib > 0 or coincidentes_fijos < fijos:
-            rango = 0
 
         # Contar el número de 1's que hay en las posiciones prohibidas y restarlos al min de 1's
         # que debe haber, de forma que se obtenga la cantidad de unos reales que hay, y tras el bucle
@@ -40,15 +36,10 @@ class Hadarmard:
             last += 1
             # Incrementar el valor del primer 1 después de la posición encontrada
             binary_array = np.array(list(np.binary_repr(last, width=width)), dtype=np.int64)
-            coincidentes_prohib = ne.evaluate("sum(binary_array * array_proh)")
-            coincidentes_fijos = ne.evaluate("sum(binary_array * array_fijos)")
-            print(last)
-            if coincidentes_prohib > 0 or coincidentes_fijos < fijos:
-                continue
             rango = ne.evaluate("sum(binary_array)")
 
         self.last = last
-        return self.rango_cobordes[np.bool_(np.flip(binary_array, axis=0))]
+        return rango_cobordes[np.bool_(np.flip(binary_array, axis=0))]
 
     def construye_R(self, t, dos_t, cuatro_t):
         matriz_R = np.ones( (cuatro_t, cuatro_t), dtype=np.int32)
@@ -75,14 +66,21 @@ class Hadarmard:
         self.last = fijos if fijos>self.last else self.last
         self.prohibidos = prohibidos
         width = 4*t - 3
-        self.array_proh = np.array(list(np.binary_repr(prohibidos, width=width)), dtype=np.int64)
-        self.array_fijos = np.array(list(np.binary_repr(fijos, width=width)), dtype=np.int64)
-        fijos = np.sum(self.array_fijos)
+        array_proh = np.array(list(np.binary_repr(prohibidos, width=width)), dtype=np.int64)
+        array_fijos = np.array(list(np.binary_repr(fijos, width=width)), dtype=np.int64)
+        borrado = array_fijos + array_proh
+        fijos = np.sum(array_fijos)
         # Convertimos los 1's en 0's para una mascara
-        xor_prohib = np.bitwise_xor(self.array_proh,np.ones(width, np.int64))
+        xor_borrado = np.bitwise_xor(borrado,np.ones(width, np.int64))
+        array_fijos = self.rango_cobordes[np.bool_(np.flip(array_fijos,axis=0))]
+        rango_cobordes = self.rango_cobordes[np.bool_(np.flip(xor_borrado,axis=0))]
+        width = len(rango_cobordes)
         resultado = False
         comb = None
+        min = t-1 - fijos
+        max -= fijos
         while not resultado and self.last < max_pred:
-            comb = self.genera_siguiente_comb(t-1, max, self.array_proh, fijos, self.array_fijos, width)
+            comb = np.concatenate((self.genera_siguiente_comb(min, max, fijos, width, rango_cobordes),array_fijos))
+            print('Combinacion: ', comb)
             resultado = self.obtiene_matriz_hadamard(comb)
         return comb

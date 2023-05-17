@@ -107,6 +107,7 @@ class App:
 
     def init_hadamard(self):
         t_value = int(self.t_text.get())
+        self.comb_encontradas = []
         max = self.max_cob_var.get()
         if len(max)>0:
             try:
@@ -140,7 +141,7 @@ class App:
     def next_hadamard(self):
         if not(self.Calculo.hadamard is None) :
             t_value = self.Calculo.t_value
-            self.Calculo.result = self.Calculo.hadamard.__main__(t_value, fijos=self.Calculo.static_cob, prohibidos= self.Calculo.prohibited_cob)
+            self.Calculo.result = np.sort(self.Calculo.hadamard.__main__(t_value, fijos=self.Calculo.static_cob, prohibidos= self.Calculo.prohibited_cob))
             if self.Calculo.result is None:
                 messagebox.showerror('There is no more possible combinations for this value of t')
             else:
