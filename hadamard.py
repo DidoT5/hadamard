@@ -81,6 +81,5 @@ class Hadarmard:
         max -= fijos
         while not resultado and self.last < max_pred:
             comb = np.concatenate((self.genera_siguiente_comb(min, max, fijos, width, rango_cobordes),array_fijos))
-            print('Combinacion: ', comb)
             resultado = self.obtiene_matriz_hadamard(comb)
         return comb
