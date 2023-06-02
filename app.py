@@ -2,10 +2,12 @@ from tkinter import *
 from tkinter import messagebox
 from tkinter import ttk
 from hadamard import Hadarmard
+from GA import GA
 import numpy as np
 
 class Calculo:
     hadamard = None
+    genetico = None
     t_value = None
     result = None
     static_cob = 0
@@ -25,6 +27,10 @@ class App:
         self.bottom_frame = Frame(self.main_frame)
         self.comb_var = StringVar()
         self.max_cob_var = StringVar()
+        self.num_gen_var = StringVar()
+        self.num_sel_var = StringVar()
+        self.num_ind_var = StringVar()
+        self.mut_rate_var = StringVar()
         self.cobordes_canvas = []
         self.comb_encontradas = []
 
@@ -149,6 +155,29 @@ class App:
                 self.update_rectangles(t_value)
         else:
             messagebox.showerror('Hadarmard first search should be executed first')
+    
+    def genetic_algorithm(self):
+        try:
+            t_value = int(self.t_text.get())
+            num_gen = int(self.num_gen_var.get())
+            sel_var = int(self.num_sel_var.get())
+            num_ind = int(self.num_ind_var.get())
+            mut_rate = float(self.mut_rate_var.get())
+            if t_value > 1:
+                self.Calculo.t_value = t_value
+                self.draw_rectangles(t_value)
+                self.Calculo.genetico = GA(t_value, num_ind, sel_var, num_gen, mut_rate)
+                self.Calculo.result = self.Calculo.genetico.__main__()
+                if self.Calculo.result is None:
+                    messagebox.showerror('There is no solution found')
+                else:
+                    self.comb_encontradas.append(self.Calculo.result)
+                    self.update_rectangles(t_value)
+            else:
+                messagebox.showerror('Value of t must be greater than 1')
+        except ValueError as ex:
+            print(ex)
+            messagebox.showerror('Bad format of numbers', 'T value, Num Generations, Num Individuos and Num Selecciones must be integers numbers \n And mutation rate a decimal between 0 and 1')
 
     def display_matrix(self):
         top = Toplevel()
@@ -226,8 +255,31 @@ class App:
         dibuja_btn = Button(self.bottom_frame, text='Dibuja Matriz', width=15, command=self.display_matrix)
         dibuja_btn.grid(row=0, column=0)
 
-        muestra_encontradas_btn = Button(self.bottom_frame, text='Matrices Encontradas ', width=15, command=self.display_encountered_comb)
+        muestra_encontradas_btn = Button(self.bottom_frame, text='Matrices Encontradas ', width=18, command=self.display_encountered_comb)
         muestra_encontradas_btn.grid(row=0, column=1, pady=5, padx=5)
+
+        num_gen_label = Label(self.bottom_frame, text='Num Generaciones: ', font=('bold', 8))
+        num_gen_entry = Entry(self.bottom_frame, textvariable=self.num_gen_var, width=5)
+        num_gen_label.grid(row=1, column=0)
+        num_gen_entry.grid(row=1, column=1)
+
+        num_sel_label = Label(self.bottom_frame, text='Num Selecciones: ', font=('bold', 8))
+        num_sel_entry = Entry(self.bottom_frame, textvariable=self.num_sel_var, width=5)
+        num_sel_label.grid(row=1, column=2)
+        num_sel_entry.grid(row=1, column=3)
+
+        num_ind_label = Label(self.bottom_frame, text='Num Individuos: ', font=('bold', 8))
+        num_ind_entry = Entry(self.bottom_frame, textvariable=self.num_ind_var, width=5)
+        num_ind_label.grid(row=2, column=0)
+        num_ind_entry.grid(row=2, column=1)
+
+        mut_rate_label = Label(self.bottom_frame, text='Tasa de mutación: ', font=('bold', 8))
+        mut_rate_entry = Entry(self.bottom_frame, textvariable=self.mut_rate_var, width=5)
+        mut_rate_label.grid(row=2, column=2)
+        mut_rate_entry.grid(row=2, column=3)
+
+        muestra_encontradas_btn = Button(self.bottom_frame, text='Algoritmo Genetico', width=15, command=self.genetic_algorithm)
+        muestra_encontradas_btn.grid(row=3, column=1, pady=5, padx=5)
 
         self.app.title('Hadarmard App')
         self.app.geometry('800x400')

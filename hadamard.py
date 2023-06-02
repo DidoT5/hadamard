@@ -55,7 +55,12 @@ class Hadarmard:
         return m.copy()
 
     def obtiene_matriz_hadamard(self, comb):
-        return all(clasifica_caminos(comb, self.cobordes.copy(), i, self.r_i[i-1], self.t, self.R.copy()) for i in range(1,self.t))
+        for i in range(1,self.t):
+            if clasifica_caminos(comb, self.cobordes.copy(), i, self.r_i[i-1], self.t, self.R.copy()):
+                continue
+            else:
+                return False
+        return True
 
     def __main__(self, t, fijos=0, prohibidos=0):
         width = 4*t - 3
