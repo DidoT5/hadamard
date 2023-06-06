@@ -2,6 +2,7 @@ from tkinter import *
 from tkinter import messagebox
 from tkinter import ttk
 from hadamard import Hadarmard
+import threading
 from GA import GA
 import numpy as np
 
@@ -33,6 +34,8 @@ class App:
         self.mut_rate_var = StringVar()
         self.cobordes_canvas = []
         self.comb_encontradas = []
+        self.is_running_bf = False
+        self.is_running_ga = False
 
     def clickedCob(self, number):
 
@@ -145,39 +148,74 @@ class App:
 
 
     def next_hadamard(self):
-        if not(self.Calculo.hadamard is None) :
-            t_value = self.Calculo.t_value
-            self.Calculo.result = np.sort(self.Calculo.hadamard.__main__(t_value, fijos=self.Calculo.static_cob, prohibidos= self.Calculo.prohibited_cob))
-            if self.Calculo.result is None:
-                messagebox.showerror('There is no more possible combinations for this value of t')
-            else:
-                self.comb_encontradas.append(self.Calculo.result)
-                self.update_rectangles(t_value)
-        else:
-            messagebox.showerror('Hadarmard first search should be executed first')
-    
-    def genetic_algorithm(self):
-        try:
-            t_value = int(self.t_text.get())
-            num_gen = int(self.num_gen_var.get())
-            sel_var = int(self.num_sel_var.get())
-            num_ind = int(self.num_ind_var.get())
-            mut_rate = float(self.mut_rate_var.get())
-            if t_value > 1:
-                self.Calculo.t_value = t_value
-                self.draw_rectangles(t_value)
-                self.Calculo.genetico = GA(t_value, num_ind, sel_var, num_gen, mut_rate)
-                self.Calculo.result = self.Calculo.genetico.__main__()
+        while self.is_running_bf:
+            if not(self.Calculo.hadamard is None) :
+                t_value = self.Calculo.t_value
+                self.Calculo.result = np.sort(self.Calculo.hadamard.__main__(t_value, fijos=self.Calculo.static_cob, prohibidos= self.Calculo.prohibited_cob))
                 if self.Calculo.result is None:
-                    messagebox.showerror('There is no solution found')
+                    messagebox.showerror('There is no more possible combinations for this value of t')
                 else:
                     self.comb_encontradas.append(self.Calculo.result)
                     self.update_rectangles(t_value)
             else:
-                messagebox.showerror('Value of t must be greater than 1')
+                messagebox.showerror('Hadarmard first search should be executed first')
+            self.siguiente_comb_btn.config(text='Calcula', command=self.start_brute_force_thread)
+            self.app.update()
+            self.is_running_bf = False
+
+    def start_brute_force_thread(self):
+        if not self.is_running_bf:
+            self.is_running_bf = True
+            self.siguiente_comb_btn.config(text='Para', command=self.stop_brute_force_thread)
+            self.app.update()
+            thread = threading.Thread(target=self.next_hadamard)
+            thread.start()
+
+    def stop_brute_force_thread(self):
+        self.siguiente_comb_btn.config(text='Calcula', command=self.start_brute_force_thread)
+        self.app.update()
+        self.is_running_bf = False
+    
+    def genetic_algorithm(self):
+        try:
+            while self.is_running_bf:
+                t_value = int(self.t_text.get())
+                num_gen = int(self.num_gen_var.get())
+                sel_var = int(self.num_sel_var.get())
+                num_ind = int(self.num_ind_var.get())
+                mut_rate = float(self.mut_rate_var.get())
+                if t_value > 1:
+                    self.Calculo.t_value = t_value
+                    self.draw_rectangles(t_value)
+                    self.Calculo.genetico = GA(t_value, num_ind, sel_var, num_gen, mut_rate)
+                    self.Calculo.result = self.Calculo.genetico.__main__()
+                    if self.Calculo.result is None:
+                        messagebox.showerror('There is no solution found')
+                    else:
+                        self.comb_encontradas.append(self.Calculo.result)
+                        self.update_rectangles(t_value)
+                else:
+                    messagebox.showerror('Value of t must be greater than 1')
+                self.is_running_ga = False
+                self.algoritmo_genetico_btn.config(text='Algoritmo Genetico', command=self.start_ga_thread)
+                self.app.update()
         except ValueError as ex:
             print(ex)
             messagebox.showerror('Bad format of numbers', 'T value, Num Generations, Num Individuos and Num Selecciones must be integers numbers \n And mutation rate a decimal between 0 and 1')
+            self.is_running_ga = False
+    
+    def start_ga_thread(self):
+        if not self.is_running_ga:
+            self.is_running_ga = True
+            self.algoritmo_genetico_btn.config(text='Para AG', command=self.stop_ga_thread)
+            self.app.update()
+            thread = threading.Thread(target=self.genetic_algorithm)
+            thread.start()
+
+    def stop_ga_thread(self):
+        self.algoritmo_genetico_btn.config(text='Algoritmo Genetico', command=self.start_ga_thread)
+        self.app.update()
+        self.is_running_ga = False
 
     def display_matrix(self):
         top = Toplevel()
@@ -250,8 +288,8 @@ class App:
 
         self.bottom_frame.grid(row=2)
 
-        siguiente_comb_btn = Button(self.bottom_frame, text='Calcula', width=15, command=self.next_hadamard)
-        siguiente_comb_btn.grid(row=0, column=2)
+        self.siguiente_comb_btn = Button(self.bottom_frame, text='Calcula', width=15, command=self.start_brute_force_thread)
+        self.siguiente_comb_btn.grid(row=0, column=2)
         dibuja_btn = Button(self.bottom_frame, text='Dibuja Matriz', width=15, command=self.display_matrix)
         dibuja_btn.grid(row=0, column=0)
 
@@ -278,8 +316,8 @@ class App:
         mut_rate_label.grid(row=2, column=2)
         mut_rate_entry.grid(row=2, column=3)
 
-        muestra_encontradas_btn = Button(self.bottom_frame, text='Algoritmo Genetico', width=15, command=self.genetic_algorithm)
-        muestra_encontradas_btn.grid(row=3, column=1, pady=5, padx=5)
+        self.algoritmo_genetico_btn = Button(self.bottom_frame, text='Algoritmo Genetico', width=15, command=self.start_ga_thread)
+        self.algoritmo_genetico_btn.grid(row=3, column=1, pady=5, padx=5)
 
         self.app.title('Hadarmard App')
         self.app.geometry('800x400')
@@ -287,4 +325,5 @@ class App:
         self.app.mainloop()
 
 app = App()
-app.__main__()
+thread = threading.Thread(target=app.__main__)
+thread.run()
