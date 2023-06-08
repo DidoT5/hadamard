@@ -6,6 +6,7 @@ import random
 class GA:
     def __init__(self, t, n_individuals, n_selection, n_generations=200, mutation_rate = 0.1):
         self.t = t
+        self.combinacion_hadamard = []
         self.mutation_rate = mutation_rate
         self.n_individuals = n_individuals
         self.n_selection = n_selection
@@ -40,12 +41,11 @@ class GA:
     def fitness(self, individual):
         fitness = 0
         comb = self.rango_cobordes[np.bool_(np.flip(individual, axis=0))]
-        for i in range(self.t):
+        for i in range(1, self.t):
             if clasifica_caminos(comb, self.cobordes.copy(), i, self.r_i[i-1], self.t, self.R.copy()):
                 fitness += 1
-            else:
-                break
-        
+        if fitness == self.t-1:
+            self.combinacion_hadamard.append(individual)
         return fitness
     
     def selection(self, population):
@@ -57,10 +57,10 @@ class GA:
     
     def reproduction(self, population, selected):
 
-        point = 2*self.t
-        father = []
+        tam = len(population[0])
 
         for i in range(len(population)):
+            point = np.random.randint(0, tam - 1)
             father = random.sample(selected, 2)
             population[i][:point] = father[0][:point]
             population[i][point:] = father[1][point:]
@@ -85,10 +85,8 @@ class GA:
             selected = self.selection(population)
             population = self.reproduction(population, selected)
             population = self.mutation(self.t, population)
-        for individual in population:
-            comb = self.rango_cobordes[np.bool_(np.flip(individual, axis=0))]
-            if all(clasifica_caminos(comb, self.cobordes.copy(), i, self.r_i[i-1], self.t, self.R.copy()) for i in range(1,self.t)):
-                return comb
+            if len(self.combinacion_hadamard) > 0:
+                return self.combinacion_hadamard[0]
         return None
 
     def __main__(self):
