@@ -84,11 +84,7 @@ def calcula_caminos_combinacion(comb, i, t):
 def es_fila_i_hadamard(c_i, I_i, t, r_i):
     return (2*c_i - 2*I_i) - (2*t - r_i) == 0
 
-def clasifica_caminos(comb, cobordes, i, r_i, t, R):
+def clasifica_caminos(comb, fila_i, i, r_i, t, R):
     c_i = calcula_caminos_combinacion(comb, i, t)
-    fila_i = np.ones(4*t, dtype = np.int32)
-    for c in comb:
-        producto = cobordes[c][i]
-        fila_i = ne.evaluate('fila_i*producto')
     I_i = calcula_intersecciones(fila_i, R[i,:], t)
     return es_fila_i_hadamard(c_i, I_i, t, r_i)

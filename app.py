@@ -6,12 +6,15 @@ import os
 from hadamard import Hadarmard
 import threading
 from GA import GA
+from DS import DS
 import numpy as np
 
 class Calculo:
     hadamard = None
     genetico = None
+    deep_search = None
     t_value = None
+    max_cob = None
     result = None
     static_cob = 0
     prohibited_cob = 0
@@ -20,6 +23,10 @@ class App:
 
     def __init__(self):
         self.app = Tk()
+        self.current_directory = os.path.dirname(os.path.abspath("app.py"))
+        icono_image = Image.open(os.path.join(self.current_directory,"hexagono.png"))
+        icono_app = ImageTk.PhotoImage(icono_image)
+        self.app.iconphoto(True, icono_app)
         self.Calculo = Calculo()
         self.main_frame = Frame(self.app)
         self.top_frame = Frame(self.main_frame)
@@ -38,6 +45,8 @@ class App:
         self.comb_encontradas = []
         self.is_running_bf = False
         self.is_running_ga = False
+        self.is_running_ds = False
+        self.help_displayed = False
 
     def clickedCob(self, number):
 
@@ -122,12 +131,15 @@ class App:
         if len(max)>0:
             try:
                 max = int(max)
+                self.Calculo.max_cob = max
                 t_value = int(self.t_text.get())
                 self.num_ind_var.set(t_value*8)
                 if max >= t_value-1 and max < 3*t_value-2:
                     if t_value > 1:
                         self.Calculo.t_value = t_value
                         self.Calculo.hadamard = Hadarmard(t_value,max=max)
+                        self.Calculo.prohibited_cob = 0
+                        self.Calculo.static_cob = 0
                         self.draw_rectangles(t_value)
                     else:
                         messagebox.showerror('Valor de t','Valor de t tiene que ser mayor que 1')
@@ -180,26 +192,30 @@ class App:
     
     def genetic_algorithm(self):
         try:
-            while self.is_running_ga:
+            res = None
+            while self.is_running_ga and res is None:
                 if self.Calculo.t_value is None:
-                    messagebox.showerror('No hay valor de t configurado')
+                    messagebox.showerror('Valor de t','No hay valor de t configurado')
+                    self.algoritmo_genetico_btn.config(text='Algoritmo Genetico', command=self.start_ga_thread)
+                    self.is_running_ga = False
+                    return 
                 num_gen = int(self.num_gen_var.get())
                 sel_var = int(self.num_sel_var.get())
                 num_ind = int(self.num_ind_var.get())
                 mut_rate = float(self.mut_rate_var.get())
                 if self.Calculo.t_value > 1:
                     self.Calculo.genetico = GA(self.Calculo.t_value, num_ind, sel_var, num_gen, mut_rate)
-                    self.Calculo.result = self.Calculo.genetico.__main__()
-                    if self.Calculo.result is None:
-                        messagebox.showerror('Algoritmo Genético','No se ha encontrado solución')
-                    else:
-                        self.comb_encontradas.append(self.Calculo.result)
-                        self.update_rectangles(self.Calculo.t_value)
-                self.algoritmo_genetico_btn.config(text='Algoritmo Genetico', command=self.start_ga_thread)
-                self.is_running_ga = False
-                self.app.update()
+                    res = self.Calculo.genetico.__main__()
+            if res is not None:
+                self.Calculo.result = res
+                self.comb_encontradas.append(self.Calculo.result)
+                self.update_rectangles(self.Calculo.t_value)
+            self.algoritmo_genetico_btn.config(text='Algoritmo Genetico', command=self.start_ga_thread)
+            self.is_running_ga = False
+            self.app.update()
         except ValueError as ex:
             messagebox.showerror('Mal formato en las variables', 'Num Generaciones, Num Individuos y Num Selecciones tienen que ser enteros \n Y la tasa de mutación un número decimal entre 0 y 1')
+            self.algoritmo_genetico_btn.config(text='Algoritmo Genetico', command=self.start_ga_thread)
             self.is_running_ga = False
     
     def start_ga_thread(self):
@@ -214,6 +230,39 @@ class App:
         self.algoritmo_genetico_btn.config(text='Algoritmo Genetico', command=self.start_ga_thread)
         self.app.update()
         self.is_running_ga = False
+
+    def deep_search(self):
+        res = None
+        while self.is_running_ds and res is None:
+            if self.Calculo.t_value is None:
+                messagebox.showerror('No hay valor de t configurado')
+            if self.Calculo.t_value > 1:
+                if self.Calculo.max_cob is not None:
+                    self.Calculo.deep_search = DS(self.Calculo.t_value, self.Calculo.max_cob)
+                    res = self.Calculo.deep_search.__main__()
+                else:
+                    self.Calculo.deep_search = DS(self.Calculo.t_value)
+                    res = self.Calculo.deep_search.__main__()
+        if res is not None:
+            self.Calculo.result = res
+            self.comb_encontradas.append(self.Calculo.result)
+            self.update_rectangles(self.Calculo.t_value)
+        self.deep_search_btn.config(text='Deep Search', command=self.stop_ds_thread)
+        self.is_running_ds = False
+        self.app.update()
+
+    def start_ds_thread(self):
+        if not self.is_running_ds:
+            self.is_running_ds = True
+            self.deep_search_btn.config(text='Para DS', command=self.stop_ds_thread)
+            self.app.update()
+            thread = threading.Thread(target=self.deep_search)
+            thread.start()
+
+    def stop_ds_thread(self):
+        self.deep_search_btn.config(text='Deep Search', command=self.start_ds_thread)
+        self.app.update()
+        self.is_running_ds = False
 
     def display_matrix(self):
         if self.Calculo.result is None:
@@ -261,7 +310,16 @@ class App:
         top.update()
 
     def display_help(self):
+        if self.help_displayed:
+            messagebox.showerror('Venta ya abierta', 'La ventana que tratas de abrir ya ha sido previamente abierta.\n Por favor, revisa las pestañas')
+            return
+
+        self.help_displayed = True
         top = Toplevel()
+        def closed_window():
+            self.help_displayed = False
+            top.destroy()
+        top.protocol("WM_DELETE_WINDOW", closed_window)
         top.geometry('700x500')
         top.title("Guía de la App")
         texto_inicial = 'Cómo usar la App'
@@ -294,7 +352,7 @@ class App:
 
 
     def __main__(self):
-
+        
         self.main_frame.place(relx=0.5, rely=0.5,anchor=CENTER)
 
         self.top_frame.grid(row=0, sticky="s")
@@ -304,8 +362,7 @@ class App:
         max_cob_label = Label(self.top_frame, text='Maximo Cobordes: ', font=('bold', 8))
         max_cob_entry = Entry(self.top_frame, textvariable=self.max_cob_var, width=5)
         start_btn = Button(self.top_frame, text='Configurar', width=15, command=self.init_hadamard)
-        current_directory = os.path.dirname(os.path.abspath("app.py"))
-        img_path = os.path.join(current_directory, "help.png")
+        img_path = os.path.join(self.current_directory, "help.png")
         help_img = Image.open(img_path)
         img_width, img_heigth = help_img.size
         help_img_resize = help_img.resize((int(25*(img_width/img_heigth)),25))
@@ -359,6 +416,8 @@ class App:
 
         self.algoritmo_genetico_btn = Button(self.bottom_frame, text='Algoritmo Genetico', width=15, command=self.start_ga_thread)
         self.algoritmo_genetico_btn.grid(row=3, column=1, pady=5, padx=5)
+        self.deep_search_btn = Button(self.bottom_frame, text='Deep Search', width=15, command=self.start_ds_thread)
+        self.deep_search_btn.grid(row=4, column=1, pady=5, padx=5)
 
         self.app.title('Hadarmard App')
         self.app.geometry('800x400')
