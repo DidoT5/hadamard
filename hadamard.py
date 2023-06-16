@@ -6,13 +6,22 @@ from itertools import combinations
 import multiprocessing as mp
 import timeit
 
+def construye_R(t, dos_t, cuatro_t):
+    matriz_R = np.ones( (cuatro_t, cuatro_t), dtype=np.int32)
+    for i in range(1,dos_t):
+        matriz_R[i,(dos_t-i):dos_t] = -1 
+        matriz_R[i,(cuatro_t-i):cuatro_t] = -1
+    for i in range(dos_t,cuatro_t):
+        matriz_R[i,(i-dos_t+1):i+1] = -1
+    return matriz_R
+
 class Hadarmard:
 
     def __init__(self, t, max=0):
         self.t = t
         self.last = 2**(t-1) -2
         # Contruccion de R
-        self.R = self.construye_R(t, t*2, t*4)
+        self.R = construye_R(t, t*2, t*4)
         # Actualiza la fila i de cada coborde i para tener dos -1
         cobordes = genera_cobordes_espacio(t)
         rango_cobordes =  range(0,len(cobordes))
@@ -41,21 +50,21 @@ class Hadarmard:
         self.last = last
         return rango_cobordes[np.bool_(np.flip(binary_array, axis=0))]
 
-    def construye_R(self, t, dos_t, cuatro_t):
-        matriz_R = np.ones( (cuatro_t, cuatro_t), dtype=np.int32)
-        for i in range(1,dos_t):
-            matriz_R[i,(dos_t-i):dos_t] = -1 
-            matriz_R[i,(cuatro_t-i):cuatro_t] = -1
-        for i in range(dos_t,cuatro_t):
-            matriz_R[i,(i-dos_t+1):i+1] = -1
-        return matriz_R
-
     def cambia_fila_i(self, m, i):
         m[i] = m[i]*(-1)
         return m.copy()
 
     def obtiene_matriz_hadamard(self, comb):
-        return all(clasifica_caminos(comb, self.cobordes.copy(), i, self.r_i[i-1], self.t, self.R.copy()) for i in range(1,self.t))
+        mat_comb = np.ones((4*self.t,4*self.t), dtype = np.int32)
+        for c in comb:
+            producto = self.cobordes[c].copy()
+            mat_comb = ne.evaluate('mat_comb*producto')
+        for i in range(1,self.t):
+            if clasifica_caminos(comb, mat_comb[i], i, self.r_i[i-1], self.t, self.R.copy()):
+                continue
+            else:
+                return False
+        return True
 
     def __main__(self, t, fijos=0, prohibidos=0):
         width = 4*t - 3
